@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   MantineProvider,
@@ -11,13 +10,13 @@ import { Notifications } from '@mantine/notifications';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import UserTable from './components/UserTable';
-import LoginPage from './components/LoginPage'; // import your LoginPage
-
+import LoginPage from './components/LoginPage';
+import CalendarView from './components/CalendarView';
 const queryClient = new QueryClient();
 
+// PrivateRoute wrapper to protect routes
 function PrivateRoute({ children }) {
   const user = localStorage.getItem('user');
-  // If user is not logged in, redirect to login page
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -42,7 +41,7 @@ function App() {
               paddingBottom: 0,
             }}
           >
-            <Routes>
+            <Routes key={localStorage.getItem('user') || 'guest'}>
               {/* Public route */}
               <Route
                 path="/login"
@@ -54,17 +53,20 @@ function App() {
                   )
                 }
               />
-              {/* Private route */}
+
+              {/* Protected route */}
               <Route
                 path="/dashboard"
                 element={
-                 
+                  <PrivateRoute>
                     <UserTable />
-                 
+                  </PrivateRoute>
                 }
               />
-              {/* Redirect all other paths to login */}
+
+              {/* Catch-all redirect */}
               <Route path="*" element={<Navigate to="/login" replace />} />
+              
             </Routes>
           </Container>
         </BrowserRouter>
