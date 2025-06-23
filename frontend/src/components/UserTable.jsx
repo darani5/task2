@@ -16,8 +16,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 import axios from "axios";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // for redirecting
-import login from "./LoginPage"
+import { useNavigate } from "react-router-dom";
 
 const TASK_STATUSES = ["To Do", "In Progress", "Done"];
 
@@ -64,6 +63,8 @@ function ProjectTaskManagement() {
     deadline: "",
     tags: [],
     projectId: null,
+    comments: "",
+     completed: false,
   });
 
   const saveProject = useMutation({
@@ -126,9 +127,7 @@ function ProjectTaskManagement() {
 
   // --- LOGOUT FUNCTION ---
   const handleLogout = () => {
-    // Clear user auth info, e.g. localStorage or context (adjust based on your auth logic)
     localStorage.removeItem("user");
-    // Redirect to login page
     navigate("/login");
   };
 
@@ -174,12 +173,7 @@ function ProjectTaskManagement() {
                   >
                     Edit
                   </Button>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    color="red"
-                    onClick={() => confirmDeleteProject(p)}
-                  >
+                  <Button size="xs" variant="outline" color="red" onClick={() => confirmDeleteProject(p)}>
                     Delete
                   </Button>
                 </Group>
@@ -206,6 +200,7 @@ function ProjectTaskManagement() {
               deadline: "",
               tags: [],
               projectId: projects.length > 0 ? projects[0].id : null,
+              comments: "",
             });
             taskModalHandlers.open();
           }}
@@ -225,6 +220,7 @@ function ProjectTaskManagement() {
             <th>Status</th>
             <th>Deadline</th>
             <th>Tags</th>
+            <th>Comments</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -237,29 +233,25 @@ function ProjectTaskManagement() {
               <td>
                 <Badge
                   color={
-                    t.status === "Done"
-                      ? "green"
-                      : t.status === "In Progress"
-                      ? "blue"
-                      : "gray"
+                    t.status === "Done" ? "green" : t.status === "In Progress" ? "blue" : "gray"
                   }
                 >
                   {t.status}
                 </Badge>
               </td>
               <td>{t.deadline ? new Date(t.deadline).toLocaleDateString() : "-"}</td>
-             <td>
-  {Array.isArray(t.tags) ? (
-    t.tags.map((tag) => (
-      <Badge key={tag} size="xs" mr={3}>
-        {tag}
-      </Badge>
-    ))
-  ) : (
-    "-"
-  )}
-</td>
-
+              <td>
+                {Array.isArray(t.tags) ? (
+                  t.tags.map((tag) => (
+                    <Badge key={tag} size="xs" mr={3}>
+                      {tag}
+                    </Badge>
+                  ))
+                ) : (
+                  "-"
+                )}
+              </td>
+              <td>{t.comments || "-"}</td>
               <td>
                 <Group spacing="xs">
                   <Button
@@ -269,18 +261,21 @@ function ProjectTaskManagement() {
                       setTaskForm({
                         ...t,
                         deadline: t.deadline ? t.deadline.split("T")[0] : "",
+                        // Ensure tags is an array
+                        tags: Array.isArray(t.tags)
+                          ? t.tags
+                          : typeof t.tags === "string"
+                          ? t.tags.split(",").map((tag) => tag.trim())
+                          : [],
+                        comments: t.comments || "",
+                          completed: !!t.completed,
                       });
                       taskModalHandlers.open();
                     }}
                   >
                     Edit
                   </Button>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    color="red"
-                    onClick={() => confirmDeleteTask(t)}
-                  >
+                  <Button size="xs" variant="outline" color="red" onClick={() => confirmDeleteTask(t)}>
                     Delete
                   </Button>
                 </Group>
@@ -296,8 +291,6 @@ function ProjectTaskManagement() {
     <Container size="md" px="md" style={{ marginTop: "20px" }}>
       <Group position="apart" mb="md" align="center">
         <h1>Task & Project Management</h1>
-
-        {/* Logout Button added here */}
         <Button color="red" onClick={handleLogout}>
           Logout
         </Button>
@@ -414,6 +407,13 @@ function ProjectTaskManagement() {
             onChange={(e) => setTaskForm({ ...taskForm, deadline: e.currentTarget.value })}
             mb="sm"
           />
+          <Textarea
+            label="Comments"
+            placeholder="Add any notes or comments..."
+            value={taskForm.comments}
+            onChange={(e) => setTaskForm({ ...taskForm, comments: e.currentTarget.value })}
+            mb="sm"
+          />
           <MultiSelect
             label="Tags"
             placeholder="Add tags"
@@ -436,7 +436,6 @@ function ProjectTaskManagement() {
             required
             mb="sm"
           />
-
           <Group position="right" mt="md">
             <Button type="submit">{taskForm.id ? "Update" : "Create"}</Button>
           </Group>
